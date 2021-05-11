@@ -8,4 +8,4 @@ This repository mainly contains scripts I've written which main function is:
 * DirEnum.bat is a batch file that also provides the same functionality and also works well.
 
 Currently the only exception in terms of functionality is: 
-- Temporary-file-cleaner - is an xml file one can import to a local task scheduler in order to automate routine maintenance work on the personal computer. The imported file will schedule a collection of batch commands that delete temporary windows files, cleans "deleted files" and performs small fixes and adjustments to the hard drive. 
+- Temporary-file-cleaner - which is an xml file one can import to a local task scheduler in order to automate routine maintenance work on the personal computer. The imported file will schedule a collection of batch commands that delete temporary windows files, cleans "deleted files" and performs small fixes and adjustments to the hard drive. 
