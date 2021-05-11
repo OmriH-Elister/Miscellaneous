@@ -6,5 +6,6 @@ This repository mainly contains scripts I've written which main function is:
 4) Output all the results to a more or less organized file. 
 * My best script for performing the aforementioned tasks and producing the desired results is DirEnum.ps1 which is a powershell script.  
 * DirEnum.bat is a batch file that also provides the same functionality and also works well.
-Currently the only exception is: 
-* Temporary-file-cleaner - is an xml file one can import to a local task scheduler in order to automate routine maintenance work on the personal computer. The imported file will schedule a collection of batch commands that delete temporary windows files, cleans "deleted files" and performs small fixes and adjustments to the hard drive. 
+
+Currently the only exception in terms of functionality is: 
+- Temporary-file-cleaner - is an xml file one can import to a local task scheduler in order to automate routine maintenance work on the personal computer. The imported file will schedule a collection of batch commands that delete temporary windows files, cleans "deleted files" and performs small fixes and adjustments to the hard drive. 
