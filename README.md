@@ -3,7 +3,7 @@ This repository mainly contains scripts I've written which main function is:
 1) Receive a folder path from the user as input.
 2) Enumerate said folder recursively (Including all of it's subfolders, their own subfolders, etc.)
 3) For each one of the folder enumerated list its amount of contained folders and files.
-4) Output all the results to a more or less organized file. \n
+4) Output all the results to a more or less organized file. 
 * My best script for performing the aforementioned tasks and producing the desired results is DirEnum.ps1 which is a powershell script.  
 
 Currently the only exception is: 
