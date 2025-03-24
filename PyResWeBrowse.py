@@ -1,57 +1,142 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
+#!/usr/bin/env python3
 import subprocess
+import threading
+import os
+import webbrowser
+from urllib.parse import urlparse
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import time
 
-# Set the nameserver
-NS = '8.8.8.8'
+PORT = 8000
+DNS_SERVER = '8.8.8.8'
+LATEST_RESPONSE = {
+    "content": b"<html><body><h1>No content yet</h1></body></html>",
+    "content_type": "text/html; charset=utf-8"
+}
+REQUEST_VERSION = {"v": str(int(time.time()))}
 
-def resolve_domain(domain, NS):
-    # Run the nslookup command with the domain and nameserver, querying only for A records (IPv4)
-    result = subprocess.run(['nslookup', '-type=A', domain, NS], capture_output=True, text=True)
-    
+def resolve_domain(domain, dns_server):
+    result = subprocess.run(['nslookup', '-type=A', domain, dns_server],
+                            capture_output=True, text=True)
     if result.returncode == 0:
-        # Extract the IP address from the nslookup result
-        answers = result.stdout.split('\n')
-        ip = [line for line in answers if 'Address:' in line][-1].split(':')[1].strip()
-        return ip
-    else:
-        print(f"Error resolving domain: {result.stderr}")
-        return None
+        for line in result.stdout.splitlines():
+            if 'Address:' in line and dns_server not in line:
+                return line.split(':')[1].strip()
+    print(f"[!] DNS resolution failed:\n{result.stderr}")
+    return None
 
-# Define the HTTP request handler
-class RequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
+def fetch_url(ip, original_url, hostname):
+    parsed = urlparse(original_url)
+    path = parsed.path or '/'
+    if parsed.query:
+        path += '?' + parsed.query
+    scheme = parsed.scheme or 'http'
+    full_url = f"{scheme}://{ip}{path}"
 
-        # Read the web page content and serve it
-        with open("c:\\windows\\temp\\weboutput.html", "rb") as file:
-            self.wfile.write(file.read())
+    curl_cmd = [
+        'curl', '-sL', full_url,
+        '-H', f'Host: {hostname}',
+        '--insecure'
+    ]
+    print(f"[+] curl: {' '.join(curl_cmd)}")
 
-# Start the HTTP server
-server = HTTPServer(("localhost", 8000), RequestHandler)
-print("Serving at http://localhost:8000")
-
-# Main loop to resolve domain and fetch webpage using curl
-while True:
-    domain = input("Enter URL: ")
-    ip = resolve_domain(domain, NS)
-
-    if ip:
-        # Fetch the webpage using curl, specifying the resolved IP directly
-        curl_command = ['curl', '-L', f'http://{ip}', '-H', f'Host: {domain}']
-        
-        # Run the curl command and capture the response
-        response = subprocess.run(curl_command, capture_output=True)
-
-        # Check if curl command was successful
+    try:
+        response = subprocess.run(curl_cmd, capture_output=True)
         if response.returncode == 0:
-            # Write the fetched content to the file
-            with open("c:\\windows\\temp\\weboutput.html", "wb") as file:
-                file.write(response.stdout)
-            print(f"Fetched {domain} successfully!")
+            return response.stdout
         else:
-            print(f"Error fetching the webpage: {response.stderr.decode()}")
-    
-    server.serve_forever()
+            print(f"[!] curl failed: {response.stderr.decode()}")
+    except Exception as e:
+        print(f"[!] Error running curl: {e}")
+    return None
 
+class ProxyHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == "/":
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            wrapper = f"""
+            <html>
+                <head><title>DNS Bypass Viewer</title></head>
+                <body style="margin:0;padding:0">
+                    <iframe id="viewer" src="/content?v=init" width="100%" height="100%" style="border:none;"></iframe>
+                    <script>
+                        let currentVersion = "init";
+                        async function pollForUpdates() {{
+                            try {{
+                                const res = await fetch('/version');
+                                const newVersion = await res.text();
+                                if (newVersion !== currentVersion) {{
+                                    currentVersion = newVersion;
+                                    document.getElementById('viewer').src = '/content?v=' + currentVersion;
+                                }}
+                            }} catch (err) {{
+                                console.error('Version check failed', err);
+                            }}
+                        }}
+                        setInterval(pollForUpdates, 2000);
+                    </script>
+                </body>
+            </html>
+            """
+            self.wfile.write(wrapper.encode())
+        elif self.path.startswith("/content"):
+            self.send_response(200)
+            self.send_header("Content-Type", LATEST_RESPONSE["content_type"])
+            self.end_headers()
+            self.wfile.write(LATEST_RESPONSE["content"])
+        elif self.path.startswith("/version"):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            self.wfile.write(REQUEST_VERSION["v"].encode())
+        else:
+            self.send_error(404, "Not found")
+
+    def log_message(self, format, *args):
+        return  # Suppress default noisy HTTP server logs
+
+def start_server():
+    server = HTTPServer(('localhost', PORT), ProxyHandler)
+    print(f"[+] Local web server started at http://localhost:{PORT}")
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+
+def main():
+    start_server()
+
+    webbrowser.open(f"http://localhost:{PORT}", new=2)
+
+    while True:
+        try:
+            url = input("URL: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\n[+] Exiting.")
+            break
+
+        if not url:
+            continue
+
+        parsed = urlparse(url)
+        if not parsed.hostname:
+            print("[!] Invalid URL")
+            continue
+
+        domain = parsed.hostname
+        ip = resolve_domain(domain, DNS_SERVER)
+        if not ip:
+            continue
+
+        print(f"[+] Resolved {domain} -> {ip}")
+        print("[+] Fetching page...")
+
+        html = fetch_url(ip, url, domain)
+        if html:
+            LATEST_RESPONSE["content"] = html
+            REQUEST_VERSION["v"] = str(int(time.time()))
+            print(f"[+] Content updated. Browser should refresh.")
+        else:
+            print("[!] Failed to fetch content.")
+
+if __name__ == "__main__":
+    main()
