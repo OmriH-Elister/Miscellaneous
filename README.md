@@ -6,10 +6,10 @@ This repository contains miscellaneous scripts I'd written:
 It does this by acting as both server and a client, as it both starts a local Webserver to receive and relay its own HTTP responses AND also crafts and sends web requests themselves (after receiving a web URL as input from the user). It then performs its own DNS resolution of the URL with the nslookup tool, crafts and sends the web request with the externally resolved IP address. The web responses reach the listening web-server and are not saved locally, but rather, they are relayed from memory over http/s to the browser (as if thye were its own responses).  Built with implementation support from ChatGPT, based on my original concept and design. Basically, I've built and directed the concept and it coded it for me.
 4) produce_report.sh - A Bash script that aggregates text files, runs psychological and linguistic analyses via Fabric, and generates a structured psycho-analysis report for a given user.
 5) DirEnum.ps1 is a powershell script that
-  1) Receives a folder path from the user as input.
-  2) Enumerates said folder recursively (Including all of it's subfolders, their own subfolders, etc.)
-  3) For each one of the folder enumerated list its amount of contained folders and files.
-  4) Output all the results to a more or less organized file. 
+  a) Receives a folder path from the user as input.
+  b) Enumerates said folder recursively (Including all of it's subfolders, their own subfolders, etc.)
+  c) For each one of the folder enumerated list its amount of contained folders and files.
+  d) Output all the results to a more or less organized file. 
 6) DirEnum.bat is a batch file that also provides the same functionality and also works well.   
 * Both the DirEnum.ps1 and DirEnum.bat are kind of dumb, because you could easily achieve the same results with 
  the "Get-ChildItem" command (or builtin batch oneliners), but when I had written them I was a Powershell 
