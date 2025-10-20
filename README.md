@@ -12,5 +12,7 @@ It does this by acting as both server and a client, as it both starts a local We
   2) Enumerates said folder recursively (Including all of it's subfolders, their own subfolders, etc.)
   3) For each one of the folder enumerated list its amount of contained folders and files.
   4) Output all the results to a more or less organized file. 
-- DirEnum.bat is a batch file that also provides the same functionality and also works well. 
+- DirEnum.bat is a batch file that also provides the same functionality and also works well.
+- produce_report.sh - A Bash script that aggregates text files, runs psychological and linguistic analyses via Fabric, and generates a structured psycho-analysis report for a given user.
+
   
